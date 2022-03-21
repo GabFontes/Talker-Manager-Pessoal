@@ -7,9 +7,7 @@ const readData = async (path) => {
 
 const writeData = async (path, newTalker) => {
   const talkers = await readData(path);
-  console.log(talkers);
   talkers.push(newTalker);
-  console.log(talkers);
   await fs.writeFile(path, JSON.stringify(talkers), (error) => {
     if (error) {
       console.log('Pane nos sistema', error);
@@ -19,6 +17,16 @@ const writeData = async (path, newTalker) => {
   });
 };
 
+const deleteTalker = async (path, filteredTalkers) => {
+  await fs.writeFile(path, JSON.stringify(filteredTalkers), (error) => {
+    if (error) {
+      console.log('Pane nos sistema', error);
+      return;
+    }
+    console.log('Talker removido');
+  });
+};
+
 module.exports = {
-  writeData, readData,
+  writeData, readData, deleteTalker,
 };

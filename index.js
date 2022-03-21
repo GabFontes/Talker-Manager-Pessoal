@@ -2,6 +2,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const fs = require('fs').promises;
 
+const PATH = './talker.json';
+
 const {
   validatePassword,
   validateEmail,
@@ -13,7 +15,7 @@ const {
   validateDate,
 } = require('./middlewares/validations');
 
-const { writeData, readData } = require('./middlewares/writeTalker');
+const { writeData, readData, deleteTalker } = require('./middlewares/writeTalker');
 
 const app = express();
 app.use(bodyParser.json());
@@ -28,15 +30,13 @@ const randomToken = () => {
   return token;
 };
 
-console.log(randomToken());
-
 // não remova esse endpoint, e para o avaliador funcionar
 app.get('/', (_request, response) => {
   response.status(HTTP_OK_STATUS).send();
 });
 
 app.get('/talker', async (_req, res) => {
-  const talkerBuffer = await fs.readFile('./talker.json', 'utf-8');
+  const talkerBuffer = await fs.readFile(PATH, 'utf-8');
   const talkerJson = JSON.parse(talkerBuffer);
   if (talkerJson.length === 0) {
     return res.status(HTTP_OK_STATUS).json([]);
@@ -47,7 +47,7 @@ app.get('/talker', async (_req, res) => {
 
 app.get('/talker/:id', async (req, res) => {
   const { id } = req.params;
-  const talkerBuffer = await fs.readFile('./talker.json', 'utf-8');
+  const talkerBuffer = await fs.readFile(PATH, 'utf-8');
   const talkerJson = JSON.parse(talkerBuffer);
   const talker = talkerJson.find((obj) => obj.id === +id);
   if (talker) {
@@ -62,6 +62,14 @@ app.post('/login', validateEmail, validatePassword, (_req, res) => {
   return res.status(200).json({ token });
 });
 
+app.delete('/talker/:id', validateToken, async (req, res) => {
+  const { id } = req.params;
+  const talkers = await readData(PATH);
+  const newTalkers = talkers.filter((tal) => tal.id !== Number(id));
+  await deleteTalker(PATH, newTalkers);
+  res.status(204).send(newTalkers);
+});
+
 app.post('/talker', validateToken,
   validateTalk,
   validateAge,
@@ -69,12 +77,12 @@ app.post('/talker', validateToken,
   validateRate,
   validateDate, async (req, res) => {
     const newTalker = { ...req.body };
-    const talkers = await readData('./talker.json');
+    const talkers = await readData(PATH);
     const talkerId = {
       id: talkers.length + 1,
       ...newTalker,
      };
-    await writeData('./talker.json', talkerId);
+    await writeData(PATH, talkerId);
     return res.status(201).json(talkerId);
   });
 

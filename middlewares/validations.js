@@ -26,7 +26,6 @@ const validateToken = (req, res, next) => {
   const tokenRegex = /^[a-zA-Z0-9]{16}$/;
 
   const result = tokenRegex.test(token);
-  console.log(result);
   if (!result) {
     return res.status(401).send(ERROR_INVALID_TOKEN);
   }
