@@ -18,19 +18,24 @@ const ERROR_INVALID_DATA = {
 const ERROR_INVALID_RATE = { message: 'O campo "rate" deve ser um inteiro de 1 à 5' };
 
 const validateToken = (req, res, next) => {
-  const { token } = req.headers.authorization;
+  const token = req.headers.authorization;
   if (!token) {
-    return res.status(401).send(ERROR_INVALID_TOKEN);
-  }
-  if (token.length < 16) {
     return res.status(401).send(ERROR_TOKEN_NOT_FOUND);
+  }
+  // Regex tirado do gabarito do course, bloco 22.5;
+  const tokenRegex = /^[a-zA-Z0-9]{16}$/;
+
+  const result = tokenRegex.test(token);
+  console.log(result);
+  if (!result) {
+    return res.status(401).send(ERROR_INVALID_TOKEN);
   }
   next();
 };
 
 const validateName = (req, res, next) => {
   const { name } = req.body;
-  if (!name || name.length === 0) {
+  if (!name) {
     return res.status(INVALID_REQUISITION).send(ERROR_NAME_REQUIRED);
   }
   if (name.length < 3) {
@@ -51,32 +56,27 @@ const validateAge = (req, res, next) => {
   next();
 };
 
-const talkIsDefined = (talk) => {
-  const { watchedAt, rate } = talk;
-  if (!talk || !watchedAt || !rate) {
-    return false;
+const validateDate = (req, res, next) => {
+  const { talk: { watchedAt } } = req.body;
+  const regexDate = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+  const result = regexDate.test(watchedAt);
+  if (!result) {
+    return res.status(INVALID_REQUISITION).send(ERROR_INVALID_DATA);
   }
-  return true;
+  next();
 };
 
-const dateIsValid = (watchedAt) => {
-  const dataParts = watchedAt.split('/');
-  if (dataParts[0].length === 2 && dataParts[1].length === 2 && dataParts[2].length === 4) {
-    return true;
+const validateRate = (req, res, next) => {
+  const { talk: { rate } } = req.body;
+  if (rate < 1 || rate > 5) {
+    return res.status(INVALID_REQUISITION).send(ERROR_INVALID_RATE);
   }
-  return false;
+  next();
 };
 
 const validateTalk = (req, res, next) => {
   const { talk } = req.body;
-  const { watchedAt, rate } = talk;
-  if (!rate >= 1 && !rate <= 5) {
-    return res.status(INVALID_REQUISITION).send(ERROR_INVALID_RATE);
-  }
-  if (!dateIsValid(watchedAt)) {
-    return res.status(INVALID_REQUISITION).send(ERROR_INVALID_DATA);
-  }
-  if (!talkIsDefined(talk)) {
+  if (!talk || !talk.watchedAt || !talk.rate) {
     return res.status(INVALID_REQUISITION).send(ERROR_TALK_REQUIRED);
   }
   next();
@@ -115,4 +115,6 @@ module.exports = {
   validateEmail,
   validateAge,
   validateTalk,
+  validateDate,
+  validateRate,
 };

@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const fs = require('fs').promises;
+
 const {
   validatePassword,
   validateEmail,
@@ -8,7 +9,11 @@ const {
   validateAge,
   validateToken,
   validateName,
-} = require('./middlewares/index');
+  validateRate,
+  validateDate,
+} = require('./middlewares/validations');
+
+const { writeData, readData } = require('./middlewares/writeTalker');
 
 const app = express();
 app.use(bodyParser.json());
@@ -18,10 +23,12 @@ const PORT = '3000';
 
 const randomToken = () => {
   // https://stackoverflow.com/questions/1349404/generate-random-string-characters-in-javascript/38622545#38622545?newreg=a117ccafb2a74aa5a24c6a225f0a613e
-  const eightDigitToken = Math.random().toString(36).substr(2, 8);
+  const eightDigitToken = Math.random().toString(36).substring(2, 10);
   const token = eightDigitToken + eightDigitToken;
   return token;
 };
+
+console.log(randomToken());
 
 // não remova esse endpoint, e para o avaliador funcionar
 app.get('/', (_request, response) => {
@@ -55,19 +62,21 @@ app.post('/login', validateEmail, validatePassword, (_req, res) => {
   return res.status(200).json({ token });
 });
 
-app.post('/talker', validateTalk, validateAge, validateToken, validateName, (req, res) => {
-  const { id, name, age, talk } = req.body;
-  const { watchedAt, rate } = talk;
-  return res.status(201).json({
-    id,
-    name,
-    age,
-    talk: {
-      watchedAt,
-      rate,
-    },
+app.post('/talker', validateToken,
+  validateTalk,
+  validateAge,
+  validateName,
+  validateRate,
+  validateDate, async (req, res) => {
+    const newTalker = { ...req.body };
+    const talkers = await readData('./talker.json');
+    const talkerId = {
+      id: talkers.length + 1,
+      ...newTalker,
+     };
+    await writeData('./talker.json', talkerId);
+    return res.status(201).json(talkerId);
   });
-});
 
 app.listen(PORT, () => {
   console.log('Online');
