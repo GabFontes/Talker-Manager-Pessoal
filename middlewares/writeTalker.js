@@ -17,7 +17,7 @@ const writeData = async (path, newTalker) => {
   });
 };
 
-const deleteTalker = async (path, filteredTalkers) => {
+const rewriteJson = async (path, filteredTalkers) => {
   await fs.writeFile(path, JSON.stringify(filteredTalkers), (error) => {
     if (error) {
       console.log('Pane nos sistema', error);
@@ -28,5 +28,5 @@ const deleteTalker = async (path, filteredTalkers) => {
 };
 
 module.exports = {
-  writeData, readData, deleteTalker,
+  writeData, readData, rewriteJson,
 };

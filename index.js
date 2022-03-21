@@ -11,11 +11,10 @@ const {
   validateAge,
   validateToken,
   validateName,
-  validateRate,
-  validateDate,
+  validateRateDate,
 } = require('./middlewares/validations');
 
-const { writeData, readData, deleteTalker } = require('./middlewares/writeTalker');
+const { writeData, readData, rewriteJson } = require('./middlewares/writeTalker');
 
 const app = express();
 app.use(bodyParser.json());
@@ -59,14 +58,14 @@ app.get('/talker/:id', async (req, res) => {
 
 app.post('/login', validateEmail, validatePassword, (_req, res) => {
   const token = randomToken();
-  return res.status(200).json({ token });
+  return res.status(HTTP_OK_STATUS).json({ token });
 });
 
 app.delete('/talker/:id', validateToken, async (req, res) => {
   const { id } = req.params;
   const talkers = await readData(PATH);
   const newTalkers = talkers.filter((tal) => tal.id !== Number(id));
-  await deleteTalker(PATH, newTalkers);
+  await rewriteJson(PATH, newTalkers);
   res.status(204).send(newTalkers);
 });
 
@@ -74,16 +73,34 @@ app.post('/talker', validateToken,
   validateTalk,
   validateAge,
   validateName,
-  validateRate,
-  validateDate, async (req, res) => {
+  validateRateDate, async (req, res) => {
     const newTalker = { ...req.body };
     const talkers = await readData(PATH);
     const talkerId = {
       id: talkers.length + 1,
       ...newTalker,
-     };
+    };
     await writeData(PATH, talkerId);
     return res.status(201).json(talkerId);
+  });
+
+app.put('/talker/:id', validateToken,
+  validateName,
+  validateAge,
+  validateTalk,
+  validateRateDate, async (req, res) => {
+    const { id } = req.params;
+    const { name, age, talk } = req.body;
+    const talkers = await readData(PATH);
+    const targetTalker = talkers.find((tal) => tal.id === Number(id));
+    targetTalker.name = name;
+    targetTalker.age = age;
+    targetTalker.talk = talk;
+    const newTalker = [
+      ...talkers,
+    ];
+    await rewriteJson(PATH, newTalker);
+    res.status(HTTP_OK_STATUS).send(targetTalker);
   });
 
 app.listen(PORT, () => {

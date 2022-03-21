@@ -55,28 +55,28 @@ const validateAge = (req, res, next) => {
   next();
 };
 
-const validateDate = (req, res, next) => {
-  const { talk: { watchedAt } } = req.body;
-  const regexDate = /^(\d{2})\/(\d{2})\/(\d{4})$/;
-  const result = regexDate.test(watchedAt);
-  if (!result) {
-    return res.status(INVALID_REQUISITION).send(ERROR_INVALID_DATA);
+const validateTalk = (req, res, next) => {
+  const { talk } = req.body;
+  if (!talk) {
+    return res.status(INVALID_REQUISITION).send(ERROR_TALK_REQUIRED);
   }
-  next();
-};
-
-const validateRate = (req, res, next) => {
-  const { talk: { rate } } = req.body;
+  const { rate } = talk;
   if (rate < 1 || rate > 5) {
     return res.status(INVALID_REQUISITION).send(ERROR_INVALID_RATE);
   }
   next();
 };
 
-const validateTalk = (req, res, next) => {
+const validateRateDate = (req, res, next) => {
   const { talk } = req.body;
-  if (!talk || !talk.watchedAt || !talk.rate) {
+  const { watchedAt, rate } = talk;
+  if (!watchedAt || !rate) {
     return res.status(INVALID_REQUISITION).send(ERROR_TALK_REQUIRED);
+  }
+  const regexDate = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+  const result = regexDate.test(watchedAt);
+  if (!result) {
+    return res.status(INVALID_REQUISITION).send(ERROR_INVALID_DATA);
   }
   next();
 };
@@ -109,11 +109,10 @@ const validatePassword = (req, res, next) => {
 
 module.exports = {
   validatePassword,
+  validateEmail,
   validateToken,
   validateName,
-  validateEmail,
   validateAge,
   validateTalk,
-  validateDate,
-  validateRate,
+  validateRateDate,
 };
