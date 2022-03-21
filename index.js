@@ -1,6 +1,14 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const fs = require('fs').promises;
+const {
+  validatePassword,
+  validateEmail,
+  validateTalk,
+  validateAge,
+  validateToken,
+  validateName,
+} = require('./middlewares/index');
 
 const app = express();
 app.use(bodyParser.json());
@@ -13,31 +21,6 @@ const randomToken = () => {
   const eightDigitToken = Math.random().toString(36).substr(2, 8);
   const token = eightDigitToken + eightDigitToken;
   return token;
-};
-
-const validateEmail = (email) => {
-  if (!email || email.length === 0) {
-    return { message: 'O campo "email" é obrigatório' };
-  }
-    const vEmail = email.split('@');
-    const vEmail2 = email.split('.');
-    
-    if (vEmail.length !== 2 && vEmail2.length !== 2) {
-      return { message: 'O "email" deve ter o formato "email@email.com"' };
-    }
-  return true;
-};
-
-const validatePassword = (password) => {
-  if (!password || password.length === 0) {
-    return { message: 'O campo "password" é obrigatório' };
-  }
-
-  if (password.length < 6) {
-    return { message: 'O "password" deve ter pelo menos 6 caracteres' };
-  }
-
-  return true;
 };
 
 // não remova esse endpoint, e para o avaliador funcionar
@@ -67,17 +50,23 @@ app.get('/talker/:id', async (req, res) => {
   return res.status(404).send({ message: 'Pessoa palestrante não encontrada' });
 });
 
-app.post('/login', (req, res) => {
-  const { email, password } = req.body;
+app.post('/login', validateEmail, validatePassword, (_req, res) => {
   const token = randomToken();
-
-  if (validateEmail(email) !== true) {
-    return res.status(400).send(validateEmail(email));
-  }
-  if (validatePassword(password) !== true) {
-    return res.status(400).send(validatePassword(password));
-  }
   return res.status(200).json({ token });
+});
+
+app.post('/talker', validateTalk, validateAge, validateToken, validateName, (req, res) => {
+  const { id, name, age, talk } = req.body;
+  const { watchedAt, rate } = talk;
+  return res.status(201).json({
+    id,
+    name,
+    age,
+    talk: {
+      watchedAt,
+      rate,
+    },
+  });
 });
 
 app.listen(PORT, () => {
