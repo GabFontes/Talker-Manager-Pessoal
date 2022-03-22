@@ -73,6 +73,7 @@ const validateRateDate = (req, res, next) => {
   if (!watchedAt || !rate) {
     return res.status(INVALID_REQUISITION).send(ERROR_TALK_REQUIRED);
   }
+  // https://pt.stackoverflow.com/questions/371316/valida%C3%A7%C3%A3o-regex-de-data-com-2-2-4-caracteres
   const regexDate = /^(\d{2})\/(\d{2})\/(\d{4})$/;
   const result = regexDate.test(watchedAt);
   if (!result) {
