@@ -37,8 +37,9 @@ app.get('/', (_request, response) => {
 app.get('/talker/search', validateToken,
   async (req, res) => {
     const { q } = req.query;
+    const query = q.toLowerCase();
     const talkers = await readData(PATH);
-    const filtered = talkers.filter((tal) => tal.name.includes(q));
+    const filtered = talkers.filter((tal) => tal.name.toLowerCase().includes(query));
     if (!q) return res.status(200).send(talkers);
     if (!filtered) return res.status(200).send([]);
     return res.status(200).json(filtered);
