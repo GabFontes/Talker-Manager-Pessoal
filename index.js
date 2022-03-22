@@ -34,15 +34,15 @@ app.get('/', (_request, response) => {
   response.status(HTTP_OK_STATUS).send();
 });
 
-app.get('/talker', async (_req, res) => {
-  const talkerBuffer = await fs.readFile(PATH, 'utf-8');
-  const talkerJson = JSON.parse(talkerBuffer);
-  if (talkerJson.length === 0) {
-    return res.status(HTTP_OK_STATUS).json([]);
-  }
-
-  return res.status(HTTP_OK_STATUS).json(talkerJson);
-});
+app.get('/talker/search', validateToken,
+  async (req, res) => {
+    const { q } = req.query;
+    const talkers = await readData(PATH);
+    const filtered = talkers.filter((tal) => tal.name.includes(q));
+    if (!q) return res.status(200).send(talkers);
+    if (!filtered) return res.status(200).send([]);
+    return res.status(200).json(filtered);
+  });
 
 app.get('/talker/:id', async (req, res) => {
   const { id } = req.params;
@@ -56,17 +56,27 @@ app.get('/talker/:id', async (req, res) => {
   return res.status(404).send({ message: 'Pessoa palestrante não encontrada' });
 });
 
-app.post('/login', validateEmail, validatePassword, (_req, res) => {
-  const token = randomToken();
-  return res.status(HTTP_OK_STATUS).json({ token });
-});
-
 app.delete('/talker/:id', validateToken, async (req, res) => {
   const { id } = req.params;
   const talkers = await readData(PATH);
   const newTalkers = talkers.filter((tal) => tal.id !== Number(id));
   await rewriteJson(PATH, newTalkers);
-  res.status(204).send(newTalkers);
+  return res.status(204).send(newTalkers);
+});
+
+app.get('/talker', async (_req, res) => {
+  const talkerBuffer = await fs.readFile(PATH, 'utf-8');
+  const talkerJson = JSON.parse(talkerBuffer);
+  if (talkerJson.length === 0) {
+    return res.status(HTTP_OK_STATUS).json([]);
+  }
+
+  return res.status(HTTP_OK_STATUS).json(talkerJson);
+});
+
+app.post('/login', validateEmail, validatePassword, (_req, res) => {
+  const token = randomToken();
+  return res.status(HTTP_OK_STATUS).json({ token });
 });
 
 app.post('/talker', validateToken,
@@ -100,7 +110,7 @@ app.put('/talker/:id', validateToken,
       ...talkers,
     ];
     await rewriteJson(PATH, newTalker);
-    res.status(HTTP_OK_STATUS).send(targetTalker);
+    return res.status(HTTP_OK_STATUS).send(targetTalker);
   });
 
 app.listen(PORT, () => {
